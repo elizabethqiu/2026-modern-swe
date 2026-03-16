@@ -11,12 +11,12 @@ import anthropic
 
 from dotenv import load_dotenv
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, dict, list, tuple
 
 load_dotenv()
 
-client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_KEY"])
 # openai_client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_KEY"])
 
 SYSTEM_PROMPT = """
 You are a coding assistant whose goal it is to help me solve coding tasks. 
@@ -46,68 +46,71 @@ def convert_to_full_path(path_str: str) -> Path:
 # three main functions
 def read_file_tool(filename: str) -> Dict[str, Any]:
     pass
-    # """
-    # Gets the full content of a file provided by the user.
-    # :param filename: The name of the file to read.
-    # :return: The full content of the file.
-    # """
-    # full_path = convert_to_full_path(filename)
+    """
+    Gets the full content of a file provided by the user.
+    :param filename: The name of the file to read.
+    :return: The full content of the file.
+    """
+
+    full_path = convert_to_full_path(filename)
     # print(full_path)
-    # with open(str(full_path), "r") as f:
-    #     content = f.read()
-    # return {
-    #     "file_path": str(full_path),
-    #     "content": content
-    # }
+    with open(str(full_path), "r") as f:
+        content = f.read()
+    return {
+        "file_path": str(full_path),
+        "content": content
+    }
 
 def list_files_tool(path: str) -> Dict[str, Any]:
     pass
-    # """
-    # Lists the files in a directory provided by the user.
-    # :param path: The path to a directory to list files from.
-    # :return: A list of files in the directory.
-    # """
-    # full_path = convert_to_full_path(path)
-    # all_files = []
-    # for item in full_path.iterdir():
-    #     all_files.append({
-    #         "filename": item.name,
-    #         "type": "file" if item.is_file() else "dir"
-    #     })
-    # return {
-    #     "path": str(full_path),
-    #     "files": all_files
-    # }
+    """
+    Lists the files in a directory provided by the user.
+    :param path: The path to a directory to list files from.
+    :return: A list of files in the directory.
+    """
+    full_path = convert_to_full_path(path)
+    all_files = []
+    for item in full_path.iterdir():
+        all_files.append({
+            "rilename": item.name,
+            "type": "file" if item.is_file() else "dir"
+        })
+    return {
+        "path": str(full_path),
+        "files": all_files
+    }
 
 def edit_file_tool(path: str, old_str: str, new_str: str) -> Dict[str, Any]:
     pass
-    # """
-    # Replaces first occurrence of old_str with new_str in file. If old_str is empty,
-    # create/overwrite file with new_str.
-    # :param path: The path to the file to edit.
-    # :param old_str: The string to replace.
-    # :param new_str: The string to replace with.
-    # :return: A dictionary with the path to the file and the action taken.
-    # """
-    # full_path = convert_to_full_path(path)
-    # if old_str == "":
-    #     full_path.write_text(new_str, encoding="utf-8")
-    #     return {
-    #         "path": str(full_path),
-    #         "action": "created_file"
-    #     }
-    # original = full_path.read_text(encoding="utf-8")
-    # if original.find(old_str) == -1:
-    #     return {
-    #         "path": str(full_path),
-    #         "action": "old_str not found"
-    #     }
-    # edited = original.replace(old_str, new_str, 1)
-    # full_path.write_text(edited, encoding="utf-8")
-    # return {
-    #     "path": str(full_path),
-    #     "action": "edited"
-    # }
+    """
+    Replaces first occurrence of old_str with new_str in file.
+    If old_str is empty, create/overwrite file with new_str.
+    :param path: The path to the file to edit.
+    :param old_str: The string to replace.
+    :param new_str: The string to replace with.
+    :return: A dictionary with the path to the file and the action taken.
+    """
+
+    full_path = convert_to_full_path(path)
+    if old_str == "":
+        full_path.write_text(new_str, encoding="utf-8")
+        return {
+            "path": str(full_path),
+            "action": "created_file"
+        }
+    original = full_path.read_text(encoding="utf-8")
+    if original.find(old_str) == -1:
+        return {
+            "path": str(full_path),
+            "action": "old_str not found"
+        }
+        # fall-back: can ask again, or infer
+    edited = original.replace(old_str, new_str, 1)
+    full_path.write_text(edited, encoding="utf-8")
+    return {
+        "path": str(full_path),
+        "action": "edited"
+    }
     
 # tools
 TOOL_REGISTRY = {
@@ -130,8 +133,8 @@ def get_tool_str_representation(tool_name: str) -> str:
 def get_full_system_prompt() -> str:
     tool_str_repr = ""
     for tool_name in TOOL_REGISTRY:
-        tool_str_repr += "TOOL\n===" + get_tool_str_representation(tool_name)
-        tool_str_repr += f"\n{"="*15}\n"
+        tool_str_repr += f"TOOL\n{"="*10}\n" + get_tool_str_representation(tool_name)
+        tool_str_repr += f"\n{"="*10}\n"
     return SYSTEM_PROMPT.format(tool_list_repr=tool_str_repr)
 
 # receive output of LLM to execute tool
@@ -139,26 +142,6 @@ def extract_tool_invocations(text: str) -> List[Tuple[str, Dict[str, Any]]]:
     """
     Return list of (tool_name, args) requested in 'tool: name({...})' lines.
     The parser expects single-line, compact JSON in parentheses.
-
-    get_tool_str_representation() returns string
-    \"""
-    Name: read_file
-    Description: <full content inputted by user>
-    Signature: (filename: str) -> Dict[str, Any]
-    \"""
-
-    so calling it thrice will produce
-
-    \"""
-    TOOL
-    ===
-        Name: read_file
-        Description: ...
-        Signature: ...
-
-    ===============
-    \"""
-
     """
     invocations = []
     for raw_line in text.splitlines():
@@ -168,7 +151,7 @@ def extract_tool_invocations(text: str) -> List[Tuple[str, Dict[str, Any]]]:
         try:
             after = line[len("tool:"):].strip()
             name, rest = after.split("(", 1)
-            name = name.strip()
+            # name = name.strip()
             if not rest.endswith(")"):
                 continue
             json_str = rest[:-1].strip()
@@ -179,8 +162,8 @@ def extract_tool_invocations(text: str) -> List[Tuple[str, Dict[str, Any]]]:
             break
     return invocations
 
-# straightforward
 def execute_llm_call(conversation: List[Dict[str, str]]) -> str:
+    # GPT
     # response = openai_client.chat.completions.create(
     #     model="gpt-5",
     #     messages=conversation,
@@ -188,6 +171,7 @@ def execute_llm_call(conversation: List[Dict[str, str]]) -> str:
     # )
     # return response.choices[0].message.content
 
+    # Claude
     response = client.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=1000,
@@ -235,7 +219,7 @@ def run_coding_agent_loop():
             assistant_response = execute_llm_call(conversation)
             tool_invocations = extract_tool_invocations(assistant_response)
 
-            print(tool_invocations)
+            print(f"Tool invocations (in run_coding_agent_loop()): {tool_invocations}")
             
             # if no tools mentioned in the string
             if not tool_invocations:
@@ -255,7 +239,7 @@ def run_coding_agent_loop():
 
             for name, args in tool_invocations:
                 # print(name, args)         # for debugging
-                tool = TOOL_REGISTRY[name]  # the 3 KV pairs we defined
+                tool = TOOL_REGISTRY[name]  # out of the 3 KV pairs we defined
                 resp = [] # ""
                 # print(name, args)
                 if name == "read_file":
